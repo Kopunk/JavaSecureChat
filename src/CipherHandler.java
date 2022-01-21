@@ -1,4 +1,5 @@
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
@@ -7,21 +8,37 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class CipherHandler {
     static byte[] salt = { '4', '8', '2', '0', 'd', 'j', 'c', 'p', 'a', 'r', 'n', 't', '6', '9', 's', 'a' };
 
-    static String encrypt(String text, String password) throws InvalidKeySpecException, NoSuchAlgorithmException,
-            NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1000, 128 * 8);
+    static private String cutPassword(String password) {
+        int passlen = 128 / 8;
+        if (password.length() > passlen) {
+            password.substring(0, passlen);
 
-        SecretKey key = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(spec);
+        } else {
+            int i = 0;
+            while (password.length() < passlen) {
+                password += password.charAt(i % passlen);
+            }
+        }
+
+        return password;
+    }
+
+    static String encrypt(String text, String password) throws NoSuchAlgorithmException, NoSuchPaddingException,
+            InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+
+        password = cutPassword(password);
+
+        Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
         Cipher aesCipher = Cipher.getInstance("AES");
+        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
-        aesCipher.init(Cipher.ENCRYPT_MODE, key);
+        // for double encryption?
+        // byte[] encrypted = aesCipher.doFinal(text.getBytes());
 
         byte[] encryptedBytes = aesCipher.doFinal(text.getBytes());
         String encryptedString = Base64.getEncoder().encodeToString(encryptedBytes);
@@ -29,14 +46,14 @@ public class CipherHandler {
         return encryptedString;
     }
 
-    static String decrypt(String encodedText, String password) throws InvalidKeySpecException, NoSuchAlgorithmException,
-            NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1000, 128 * 8);
+    static String decrypt(String encodedText, String password) throws NoSuchAlgorithmException, NoSuchPaddingException,
+            InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 
-        SecretKey key = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(spec);
+        password = cutPassword(password);
+
+        Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
         Cipher aesCipher = Cipher.getInstance("AES");
-
-        aesCipher.init(Cipher.DECRYPT_MODE, key);
+        aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
 
         byte[] encryptedBytes = Base64.getDecoder().decode(encodedText);
         byte[] decryptedBytes = aesCipher.doFinal(encryptedBytes);
@@ -44,5 +61,40 @@ public class CipherHandler {
         String decryptedString = new String(decryptedBytes);
 
         return decryptedString;
+    }
+
+    public static void main(String[] args) {
+        final String pass = "a super secret";
+        String s = "I loooooooooove Java!!!";
+        String beforeDecryption = "LEH9tuv35yK4e/K+z6ympw2fi+dQpUtlYMDUdLrmG9A=";
+        String encryptedString = beforeDecryption;
+        String decryptedString = "";
+
+        // test encrypt
+        try {
+            encryptedString = encrypt(s, pass);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+                | IllegalBlockSizeException | BadPaddingException e) {
+            System.err.println("ERROR: could't encrypt");
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        System.out.println("Before encryption: " + s);
+        System.out.println("After encryption: " + encryptedString);
+
+        // test decrypt
+        try {
+            decryptedString = decrypt(encryptedString, pass);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+                | IllegalBlockSizeException | BadPaddingException e) {
+            System.err.println("ERROR: could't decrypt");
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        System.out.println("Before decryption: " + encryptedString);
+        System.out.println("After decryption: " + decryptedString);
+        System.exit(0);
     }
 }
