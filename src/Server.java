@@ -1,5 +1,3 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,8 +42,6 @@ public class Server extends Logger {
         Socket clientSocket;
 
         InputStream inputStream;
-        DataInputStream dataInputStream;
-        DataOutputStream dataOutputStream;
         ObjectInputStream objectInputStream;
         ObjectOutputStream objectOutputStream;
 
@@ -53,7 +49,7 @@ public class Server extends Logger {
 
         Connection(Socket clientSocket) throws IOException {
             this.clientSocket = clientSocket;
-            this.dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+            objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
 
             Thread connectionThread = new Thread(this);
             connectionThread.start();
@@ -62,12 +58,10 @@ public class Server extends Logger {
         @Override
         public void run() {
             try {
-                inputStream = clientSocket.getInputStream();
-                dataInputStream = new DataInputStream(inputStream);
+                objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
 
                 do {
                     log("reading messages from: " + clientSocket);
-                    objectInputStream = new ObjectInputStream(dataInputStream);
                     inputMessage = (Message) objectInputStream.readObject();
 
                     if (inputMessage.code == Message.Code.MSG) {
@@ -79,9 +73,7 @@ public class Server extends Logger {
                 // messageQueue.addLast(new Message(clientSocket + " left"));
 
                 objectOutputStream.close();
-                dataOutputStream.close();
                 objectInputStream.close();
-                dataInputStream.close();
                 clientSocket.close();
 
             } catch (IOException | ClassNotFoundException e) {
@@ -94,20 +86,7 @@ public class Server extends Logger {
             } finally {
                 clientList.remove(this);
             }
-
-            // if (clientList.isEmpty()) {
-            // try {
-            // serverSocket.close();
-            // } catch (Exception e) {
-            // log("close server");
-            // }
-            // }
-
         }
-
-        // ObjectOutputStream getObjectOutputStream() {
-        //     return objectOutputStream;
-        // }
     }
 
     class Broadcaster implements Runnable {
@@ -142,8 +121,6 @@ public class Server extends Logger {
                             client.objectOutputStream.writeObject(messageQueue.getFirst());
                             client.objectOutputStream.flush();
 
-                            // client.getDataOutputStream().writeUTF(messageQueue.getFirst().toString());
-                            // client.getDataOutputStream().flush();
                         } catch (IOException e) {
                             log("ERROR: IO Exception: " + e);
                         }
@@ -152,6 +129,5 @@ public class Server extends Logger {
                 }
             }
         }
-
     }
 }

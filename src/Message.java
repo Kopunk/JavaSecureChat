@@ -6,7 +6,7 @@ public class Message implements Serializable {
     Code code;
 
     enum Code {
-        MSG, EXIT
+        MSG, EXIT, ERR
     }
 
     Message(String author, String message, Code code) {
