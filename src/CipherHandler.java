@@ -12,7 +12,7 @@ public class CipherHandler {
     static private String cutPassword(String password) {
         int passlen = 128 / 8;
         if (password.length() > passlen) {
-            password.substring(0, passlen);
+            password = password.substring(0, passlen);
 
         } else {
             int i = 0;
@@ -60,7 +60,7 @@ public class CipherHandler {
     }
 
     public static void main(String[] args) {
-        final String pass = "a super secret";
+        final String pass = "a super secret!!!!asdflkjashfalkfahfa";
         String s = "I loooooooooove Java!!!";
         String beforeDecryption = "LEH9tuv35yK4e/K+z6ympw2fi+dQpUtlYMDUdLrmG9A=";
         String encryptedString = beforeDecryption;

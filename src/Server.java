@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 
 public class Server extends Logger {
     final ServerSocket serverSocket;
@@ -38,6 +39,19 @@ public class Server extends Logger {
         log("server socket closed");
     }
 
+    void closeServer() {
+        messageQueue.addLast(new Message("Server", "Connection closed by Server", Message.Code.SERVER));
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            System.err.println("ERROR: " + e);
+            e.printStackTrace();
+            System.exit(1);
+        }
+        clientList = new LinkedList<Connection>();
+
+    }
+
     class Connection implements Runnable {
         Socket clientSocket;
 
@@ -64,7 +78,7 @@ public class Server extends Logger {
                     log("reading messages from: " + clientSocket);
                     inputMessage = (Message) objectInputStream.readObject();
 
-                    if (inputMessage.code == Message.Code.MSG) {
+                    if (inputMessage.code != Message.Code.EXIT) {
                         messageQueue.addLast(inputMessage);
                     }
 

@@ -29,7 +29,7 @@ class Client extends Logger {
         receiver = new Receiver();
     }
 
-    private void sendMessage(Message message) throws IOException {
+    void sendMessage(Message message) throws IOException {
         objectOutputStream.writeObject(message);
         objectOutputStream.flush();
     }
@@ -62,10 +62,12 @@ class Client extends Logger {
             while (!clientSocket.isClosed()) {
                 try {
                     incommingMessageQueue.addLast((Message) objectInputStream.readObject());
+                    log("received a message: " + incommingMessageQueue.getLast().text);
                 } catch (ClassNotFoundException | IOException e) {
                     incommingMessageQueue.addLast(new Message(nickname, null, Message.Code.ERR));
                     log("ERROR reading message: " + e);
                     // e.printStackTrace();
+                    break;
                 }
             }
         }
