@@ -119,7 +119,7 @@ class ConnectionManager implements Runnable {
     }
 
     String formatMessage(Message message) {
-        String htmlText = "";
+        String htmlText = "<hr>";
         htmlText += "<b>" + message.author + "</b> <font color='gray'> at " + message.timeOfCreation + "</font>";
         htmlText += "<br>" + message.text;
         htmlText += "<br>";

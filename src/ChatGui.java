@@ -1,10 +1,16 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileWriter;
+import java.io.IOException;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -14,6 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLEditorKit;
 
 class ChatGui extends JFrame {
@@ -26,6 +34,7 @@ class ChatGui extends JFrame {
     ChatGui() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(200, 200));
+        setTitle("Secure Chat");
 
         JMenuBar menuBar = new JMenuBar();
         add(menuBar, BorderLayout.NORTH);
@@ -53,10 +62,13 @@ class ChatGui extends JFrame {
         messagesArea = new JEditorPane("text/html", null);
         htmlEditor = new HTMLEditorKit();
         messagesArea.setEditorKit(htmlEditor);
+
         JScrollPane messagesAreaScroll = new JScrollPane(messagesArea);
         add(messagesAreaScroll, BorderLayout.CENTER);
         messagesArea.setEditable(false);
+        messagesArea.setBackground(new Color(204, 153, 255));
         messagesAreaScroll.setVisible(true);
+        messagesAreaScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         JPanel bottomPanel = new JPanel();
         add(bottomPanel, BorderLayout.SOUTH);
@@ -65,6 +77,8 @@ class ChatGui extends JFrame {
         textField = new JTextField();
         bottomPanel.add(textField, BorderLayout.CENTER);
         textField.setMinimumSize(new Dimension(50, 10));
+        textField.setToolTipText("Type message to send");
+        textField.setBackground(new Color(51, 153, 255));
         textField.setVisible(true);
 
         JButton sendButton = new JButton("Send");
@@ -86,7 +100,6 @@ class ChatGui extends JFrame {
             String nickname;
             String password;
 
-            // --
             JTextField nicknameField = new JTextField();
             JTextField portField = new JTextField();
             JTextField passwordField = new JPasswordField();
@@ -122,8 +135,8 @@ class ChatGui extends JFrame {
                     password = passwordField.getText();
                 }
 
-                // new DisconnectAction().actionPerformed(null);
-                connectionManager = new ConnectionManager(port, nickname, password, messagesArea, htmlEditor, textField);
+                connectionManager = new ConnectionManager(port, nickname,
+                        password, messagesArea, htmlEditor, textField);
             }
         }
     }
@@ -140,14 +153,30 @@ class ChatGui extends JFrame {
     class ExportChatAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            // TODO popup window
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Export chat history");
+
+            int selection = fileChooser.showSaveDialog(null);
+
+            if (selection == JFileChooser.APPROVE_OPTION) {
+                try {
+                    FileWriter writer = new FileWriter(fileChooser.getSelectedFile());
+                    String docStr = messagesArea.getDocument().getText(0, messagesArea.getDocument().getLength());
+                    writer.write(docStr);
+                    writer.close();
+                } catch (IOException | BadLocationException e1) {
+                    JOptionPane.showMessageDialog(null, "Error writing to file: " + e1);
+                    // e.printStackTrace();
+                }
+            }
         }
     }
 
     class AboutAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            JOptionPane.showMessageDialog(null, "Java Secure Chat by Wojciech Kopanski");
+            JOptionPane.showMessageDialog(null, "Java Secure Chat by Wojciech Kopanski", "Author", JOptionPane.INFORMATION_MESSAGE, new ImageIcon("author_icon.jpeg", "Wojciech Kopanski"));
+            // JOptionPane.showMessageDialog(null, "Java Secure Chat by Wojciech Kopanski");
         }
     }
 
@@ -155,6 +184,7 @@ class ChatGui extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             connectionManager.sendMessage(textField.getText());
+            textField.setText("");
         }
     }
 }
